@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -62,7 +63,7 @@ public class Simulation implements PersistentSimulation {
 		object.putInt("currentTime", 0);
 		object.putLong("finishedAt", 0L);
 		object.put("parameters", new MongoObject());
-		object.put("agents", new HashSet<UUID>());
+		object.put("agents", new BasicDBList());
 		object.putLong("parent", 0L);
 		object.put("children", new HashSet<Long>());
 		sims.insert(object);
@@ -154,20 +155,20 @@ public class Simulation implements PersistentSimulation {
 
 	@Override
 	public Set<PersistentAgent> getAgents() {
-		@SuppressWarnings("unchecked")
-		Set<UUID> aids = (Set<UUID>) object.get("agents");
+		BasicDBList aids = (BasicDBList) object.get("agents");
 		Set<PersistentAgent> agents = new HashSet<PersistentAgent>();
-		for (UUID id : aids) {
-			agents.add(new Agent(id, this, db));
+		for (Object id : aids) {
+			agents.add(new Agent((UUID) id, this, db));
 		}
 		return agents;
 	}
 
 	public void addAgent(PersistentAgent a) {
-		@SuppressWarnings("unchecked")
-		Set<UUID> agents = (Set<UUID>) object.get("agents");
-		agents.add(a.getID());
-		sims.save(object);
+		BasicDBList agents = (BasicDBList) object.get("agents");
+		if (!agents.contains(a.getID())) {
+			agents.add(a.getID());
+			sims.save(object);
+		}
 	}
 
 	@Override
