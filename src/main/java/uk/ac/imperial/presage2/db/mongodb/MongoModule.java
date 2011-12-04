@@ -18,6 +18,8 @@
  */
 package uk.ac.imperial.presage2.db.mongodb;
 
+import java.util.Properties;
+
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 
@@ -36,6 +38,13 @@ public class MongoModule extends DatabaseModule {
 		this.host = "127.0.0.1";
 		this.username = "";
 		this.password = "";
+	}
+
+	public MongoModule(Properties props) {
+		super();
+		host = props.getProperty("mongo.host", "127.0.0.1");
+		username = props.getProperty("mongo.user", "");
+		password = props.getProperty("mongo.pass", "");
 	}
 
 	@Override

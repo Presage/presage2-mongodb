@@ -56,31 +56,25 @@ public class MongoStorage implements StorageService, DatabaseService {
 			.synchronizedMap(new HashMap<UUID, Agent>());
 
 	@Inject
-	MongoStorage() {
-		super();
-		this.host = "localhost";
-	}
-
-	@Inject
 	MongoStorage(@Named("mongo.host") String host) {
 		super();
 		this.host = host;
-	}
-
-	@Inject
-	MongoStorage(@Named("mongo.host") String host,
-			@Named("mongo.user") String username,
-			@Named("mongo.pass") String password) {
-		super();
-		this.host = host;
-		this.username = username;
-		this.password = password;
 	}
 
 	MongoStorage(String host, String dbName) {
 		super();
 		this.host = host;
 		this.dbName = dbName;
+	}
+
+	@Inject(optional = true)
+	void setUsername(@Named("mongo.user") String username) {
+		this.username = username;
+	}
+
+	@Inject(optional = true)
+	void setPassword(@Named("mongo.pass") String password) {
+		this.password = password;
 	}
 
 	@Override
