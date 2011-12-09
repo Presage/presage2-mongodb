@@ -24,17 +24,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 
 import uk.ac.imperial.presage2.core.db.persistent.PersistentAgent;
 import uk.ac.imperial.presage2.core.db.persistent.PersistentEnvironment;
 import uk.ac.imperial.presage2.core.db.persistent.PersistentSimulation;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 
 public class Simulation implements PersistentSimulation {
 
@@ -44,16 +42,14 @@ public class Simulation implements PersistentSimulation {
 	final MongoObject object;
 	final Environment env;
 
-	Simulation(String name, String classname, String state, int finishTime,
-			DB db) {
+	Simulation(String name, String classname, String state, int finishTime, DB db) {
 		super();
 		this.db = db;
 		sims = db.getCollection(simCollection);
 		object = new MongoObject();
 		DBObject simId = db.getCollection("counters").findAndModify(
 				new BasicDBObject("_id", simCollection), null, null, false,
-				new BasicDBObject("$inc", new BasicDBObject("next", 1L)), true,
-				true);
+				new BasicDBObject("$inc", new BasicDBObject("next", 1L)), true, true);
 		object.putLong("_id", (Long) simId.get("next"));
 		object.putString("name", name);
 		object.putString("classname", classname);
@@ -63,7 +59,6 @@ public class Simulation implements PersistentSimulation {
 		object.putInt("currentTime", 0);
 		object.putLong("finishedAt", 0L);
 		object.put("parameters", new MongoObject());
-		object.put("agents", new BasicDBList());
 		object.putLong("parent", 0L);
 		object.put("children", new HashSet<Long>());
 		sims.insert(object);
@@ -155,20 +150,18 @@ public class Simulation implements PersistentSimulation {
 
 	@Override
 	public Set<PersistentAgent> getAgents() {
-		BasicDBList aids = (BasicDBList) object.get("agents");
 		Set<PersistentAgent> agents = new HashSet<PersistentAgent>();
-		for (Object id : aids) {
-			agents.add(new Agent((UUID) id, this, db));
+		DBCollection agentsCollection = db.getCollection(Agent.agentCollection);
+		// query agents collection for this sim id
+		for (DBObject agent : agentsCollection.find(new BasicDBObject("simID", getID()))) {
+			agents.add(new Agent(agent, db));
 		}
 		return agents;
 	}
 
 	public void addAgent(PersistentAgent a) {
-		BasicDBList agents = (BasicDBList) object.get("agents");
-		if (!agents.contains(a.getID())) {
-			agents.add(a.getID());
-			sims.save(object);
-		}
+		// we don't add agents to the simulation object - use weak reference
+		// from agents collection
 	}
 
 	@Override

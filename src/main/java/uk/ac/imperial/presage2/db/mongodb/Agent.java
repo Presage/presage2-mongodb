@@ -47,7 +47,7 @@ public class Agent implements PersistentAgent {
 		this.object = new MongoObject();
 		// get indices
 		DBObject index = new BasicDBObject();
-		index.put("simId", 1);
+		index.put("simID", 1);
 		index.put("aid", 1);
 		agents.ensureIndex(index, "simID", true);
 
@@ -70,6 +70,13 @@ public class Agent implements PersistentAgent {
 		query.put("simID", sim.getID());
 		query.put("aid", aid);
 		this.object = new MongoObject(this.agents.findOne(query));
+	}
+
+	Agent(DBObject object, DB db) {
+		super();
+		this.db = db;
+		this.agents = db.getCollection(agentCollection);
+		this.object = new MongoObject(object);
 	}
 
 	@Override
@@ -108,8 +115,7 @@ public class Agent implements PersistentAgent {
 	}
 
 	@Override
-	public void createRelationshipTo(PersistentAgent p, String type,
-			Map<String, Object> parameters) {
+	public void createRelationshipTo(PersistentAgent p, String type, Map<String, Object> parameters) {
 
 	}
 
@@ -121,8 +127,7 @@ public class Agent implements PersistentAgent {
 			if (t != null)
 				return t;
 			// tidy map
-			for (Entry<Integer, WeakReference<AgentState>> entry : stateCache
-					.entrySet()) {
+			for (Entry<Integer, WeakReference<AgentState>> entry : stateCache.entrySet()) {
 				if (entry.getValue().get() == null)
 					stateCache.remove(entry.getKey());
 			}
