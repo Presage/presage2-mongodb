@@ -27,10 +27,8 @@ import java.util.UUID;
 
 import uk.ac.imperial.presage2.core.db.DatabaseService;
 import uk.ac.imperial.presage2.core.db.StorageService;
-import uk.ac.imperial.presage2.core.db.Transaction;
 import uk.ac.imperial.presage2.core.db.persistent.PersistentAgent;
 import uk.ac.imperial.presage2.core.db.persistent.PersistentSimulation;
-import uk.ac.imperial.presage2.core.db.persistent.SimulationFactory;
 import uk.ac.imperial.presage2.core.db.persistent.TransientAgentState;
 
 import com.google.inject.Inject;
@@ -129,11 +127,6 @@ public class MongoStorage implements StorageService, DatabaseService {
 	}
 
 	@Override
-	public SimulationFactory getSimulationFactory() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public List<Long> getSimulations() {
 		DBCursor cursor = db.getCollection(Simulation.simCollection).find(
 				new BasicDBObject(), new BasicDBObject());
@@ -175,11 +168,6 @@ public class MongoStorage implements StorageService, DatabaseService {
 	@Override
 	public TransientAgentState getAgentState(UUID aid, int time) {
 		return getAgent(aid).getState(time);
-	}
-
-	@Override
-	public Transaction startTransaction() {
-		throw new UnsupportedOperationException();
 	}
 
 }

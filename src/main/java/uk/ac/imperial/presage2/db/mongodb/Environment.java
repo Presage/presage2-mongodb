@@ -18,12 +18,16 @@
  */
 package uk.ac.imperial.presage2.db.mongodb;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import uk.ac.imperial.presage2.core.db.persistent.PersistentEnvironment;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-
-import uk.ac.imperial.presage2.core.db.persistent.PersistentEnvironment;
 
 public class Environment implements PersistentEnvironment {
 
@@ -63,23 +67,31 @@ public class Environment implements PersistentEnvironment {
 	}
 
 	@Override
-	public Object getProperty(String key) {
-		return this.state.get(key);
+	public String getProperty(String key) {
+		try {
+			return this.state.get(key).toString();
+		} catch (NullPointerException e) {
+			return null;
+		}
 	}
 
 	@Override
-	public void setProperty(String key, Object value) {
+	public void setProperty(String key, String value) {
 		this.state.put(key, value);
 		this.env.save(this.state);
 	}
 
 	@Override
-	public Object getProperty(String key, int timestep) {
-		return getState(timestep).get(key);
+	public String getProperty(String key, int timestep) {
+		try {
+			return getState(timestep).get(key).toString();
+		} catch (NullPointerException e) {
+			return null;
+		}
 	}
 
 	@Override
-	public void setProperty(String key, int timestep, Object value) {
+	public void setProperty(String key, int timestep, String value) {
 		DBObject tState = getState(timestep);
 		tState.put(key, value);
 		transEnv.save(tState);
@@ -97,6 +109,34 @@ public class Environment implements PersistentEnvironment {
 			transEnv.save(tState);
 		}
 		return tState;
+	}
+
+	@Override
+	public Map<String, String> getProperties() {
+		Map<String, String> properties = new HashMap<String, String>();
+		for (String key : this.state.keySet()) {
+			// skip simId key
+			if (key.equals("simId") || key.equals("_id")) {
+				continue;
+			}
+			properties.put(key, this.state.get(key).toString());
+		}
+		return Collections.unmodifiableMap(properties);
+	}
+
+	@Override
+	public Map<String, String> getProperties(int timestep) {
+		Map<String, String> properties = new HashMap<String, String>();
+		DBObject tState = this.getState(timestep);
+		for (String key : tState.keySet()) {
+			// skip simId key
+			if (key.equals("simId") || key.equals("_id") || key.equals("time")) {
+				continue;
+			}
+			properties.put(key, tState.get(key)
+					.toString());
+		}
+		return Collections.unmodifiableMap(properties);
 	}
 
 }

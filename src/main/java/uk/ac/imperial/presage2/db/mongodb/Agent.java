@@ -19,6 +19,7 @@
 package uk.ac.imperial.presage2.db.mongodb;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -102,21 +103,20 @@ public class Agent implements PersistentAgent {
 	}
 
 	@Override
-	public Object getProperty(String key) {
+	public String getProperty(String key) {
 		DBObject props = (DBObject) object.get("properties");
-		return props.get(key);
+		try {
+			return props.get(key).toString();
+		} catch (NullPointerException e) {
+			return null;
+		}
 	}
 
 	@Override
-	public void setProperty(String key, Object value) {
+	public void setProperty(String key, String value) {
 		DBObject props = (DBObject) object.get("properties");
 		props.put(key, value);
 		this.agents.save(object);
-	}
-
-	@Override
-	public void createRelationshipTo(PersistentAgent p, String type, Map<String, Object> parameters) {
-
 	}
 
 	@Override
@@ -127,7 +127,8 @@ public class Agent implements PersistentAgent {
 			if (t != null)
 				return t;
 			// tidy map
-			for (Entry<Integer, WeakReference<AgentState>> entry : stateCache.entrySet()) {
+			for (Entry<Integer, WeakReference<AgentState>> entry : stateCache
+					.entrySet()) {
 				if (entry.getValue().get() == null)
 					stateCache.remove(entry.getKey());
 			}
@@ -135,6 +136,12 @@ public class Agent implements PersistentAgent {
 		t = new AgentState(this, time, db);
 		stateCache.put(time, new WeakReference<AgentState>(t));
 		return t;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Map<String, String> getProperties() {
+		return Collections.unmodifiableMap(((DBObject) object.get("properties")).toMap());
 	}
 
 }

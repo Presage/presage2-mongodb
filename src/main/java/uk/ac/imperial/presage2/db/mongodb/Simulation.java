@@ -136,13 +136,13 @@ public class Simulation implements PersistentSimulation {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Map<String, Object> getParameters() {
+	public Map<String, String> getParameters() {
 		DBObject params = (DBObject) object.get("parameters");
 		return params.toMap();
 	}
 
 	@Override
-	public void addParameter(String key, Object value) {
+	public void addParameter(String key, String value) {
 		DBObject params = (DBObject) object.get("parameters");
 		params.put(key, value);
 		sims.save(object);
