@@ -18,9 +18,9 @@
  */
 package uk.ac.imperial.presage2.db.mongodb;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +29,7 @@ import uk.ac.imperial.presage2.core.db.persistent.PersistentAgent;
 import uk.ac.imperial.presage2.core.db.persistent.PersistentEnvironment;
 import uk.ac.imperial.presage2.core.db.persistent.PersistentSimulation;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -60,7 +61,7 @@ public class Simulation implements PersistentSimulation {
 		object.putLong("finishedAt", 0L);
 		object.put("parameters", new MongoObject());
 		object.putLong("parent", 0L);
-		object.put("children", new HashSet<Long>());
+		object.put("children", new BasicDBList());
 		sims.insert(object);
 		env = new Environment(getID(), db);
 	}
@@ -194,17 +195,19 @@ public class Simulation implements PersistentSimulation {
 	}
 
 	public void addChild(PersistentSimulation sim) {
-		@SuppressWarnings("unchecked")
-		Set<Long> children = (Set<Long>) object.get("children");
+		BasicDBList children = (BasicDBList) object.get("children");
 		children.add(sim.getID());
 		sims.save(object);
 	}
 
 	@Override
 	public List<Long> getChildren() {
-		@SuppressWarnings("unchecked")
-		Set<Long> children = (Set<Long>) object.get("children");
-		return new LinkedList<Long>(children);
+		BasicDBList list = (BasicDBList) object.get("children");
+		List<Long> children = new ArrayList<Long>(list.size());
+		for(Object child : list) {
+			children.add(Long.parseLong(child.toString()));
+		}
+		return children;
 	}
 
 }
