@@ -18,7 +18,15 @@
  */
 package uk.ac.imperial.presage2.db.mongodb;
 
+import static org.junit.Assert.*;
+
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import uk.ac.imperial.presage2.core.db.GenericStorageServiceTest;
+import uk.ac.imperial.presage2.core.db.persistent.PersistentSimulation;
+import uk.ac.imperial.presage2.core.util.random.Random;
 
 public class MongoStorageTest extends GenericStorageServiceTest {
 
@@ -26,7 +34,7 @@ public class MongoStorageTest extends GenericStorageServiceTest {
 
 	@Override
 	public void getDatabase() {
-		mongo = new MongoStorage("127.0.0.1", "presage-test");
+		mongo = new MongoStorage("ee-sm1106.ee.ic.ac.uk", "presage-test");
 		// clear db
 		try {
 			mongo.start();
@@ -38,6 +46,35 @@ public class MongoStorageTest extends GenericStorageServiceTest {
 
 		this.db = mongo;
 		this.sto = mongo;
+	}
+
+	@Test
+	@Ignore
+	public void testCacheExpiry() {
+		final String simName = RandomStringUtils.randomAlphanumeric(Random
+				.randomInt(20));
+		final String simClass = RandomStringUtils.randomAlphanumeric(Random
+				.randomInt(100));
+		final String simState = RandomStringUtils.randomAlphanumeric(Random
+				.randomInt(80));
+		final int simFinish = Random.randomInt(100);
+
+		final PersistentSimulation simOrig = sto.createSimulation(simName,
+				simClass, simState, simFinish);
+		final PersistentSimulation sim1 = sto
+				.getSimulationById(simOrig.getID());
+		assertSame(sim1, simOrig);
+
+		// wait for expected cache expiry
+		try {
+			Thread.sleep(MongoStorage.SIM_CACHE_TTL + 5);
+		} catch (InterruptedException e) {
+		}
+
+		// new object should be returned
+		final PersistentSimulation sim2 = sto
+				.getSimulationById(simOrig.getID());
+		assertNotSame(sim2, simOrig);
 	}
 
 }

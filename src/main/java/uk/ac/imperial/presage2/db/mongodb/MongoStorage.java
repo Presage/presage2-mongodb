@@ -50,6 +50,9 @@ public class MongoStorage implements StorageService, DatabaseService {
 
 	Map<Long, Simulation> simCache = Collections
 			.synchronizedMap(new HashMap<Long, Simulation>());
+	Map<Long, Long> simCacheAge = Collections
+			.synchronizedMap(new HashMap<Long, Long>());
+	final static long SIM_CACHE_TTL = 5000;
 	Map<UUID, Agent> agentCache = Collections
 			.synchronizedMap(new HashMap<UUID, Agent>());
 
@@ -103,6 +106,8 @@ public class MongoStorage implements StorageService, DatabaseService {
 				finishTime, db);
 		this.simCache.put(this.currentSimulation.getID(),
 				this.currentSimulation);
+		this.simCacheAge.put(this.currentSimulation.getID(),
+				System.currentTimeMillis());
 		this.agentCache.clear();
 		return this.currentSimulation;
 	}
@@ -114,12 +119,15 @@ public class MongoStorage implements StorageService, DatabaseService {
 
 	@Override
 	public PersistentSimulation getSimulationById(long id) {
-		if (this.simCache.containsKey(id)) {
+		if (this.simCache.containsKey(id)
+				&& this.simCacheAge.get(id).longValue() + SIM_CACHE_TTL > System
+				.currentTimeMillis()) {
 			return this.simCache.get(id);
 		}
 		try {
 			Simulation s = new Simulation(id, db);
 			this.simCache.put(s.getID(), s);
+			this.simCacheAge.put(s.getID(), System.currentTimeMillis());
 			return s;
 		} catch (NullPointerException e) {
 			return null;
