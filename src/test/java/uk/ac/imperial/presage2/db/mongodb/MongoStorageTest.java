@@ -34,7 +34,7 @@ public class MongoStorageTest extends GenericStorageServiceTest {
 
 	@Override
 	public void getDatabase() {
-		mongo = new MongoStorage("ee-sm1106.ee.ic.ac.uk", "presage-test");
+		mongo = new MongoStorage("localhost", "presage-test");
 		// clear db
 		try {
 			mongo.start();
