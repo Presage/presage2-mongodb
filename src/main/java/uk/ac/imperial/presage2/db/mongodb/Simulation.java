@@ -43,14 +43,16 @@ public class Simulation implements PersistentSimulation {
 	final MongoObject object;
 	final Environment env;
 
-	Simulation(String name, String classname, String state, int finishTime, DB db) {
+	Simulation(String name, String classname, String state, int finishTime,
+			DB db) {
 		super();
 		this.db = db;
 		sims = db.getCollection(simCollection);
 		object = new MongoObject();
 		DBObject simId = db.getCollection("counters").findAndModify(
 				new BasicDBObject("_id", simCollection), null, null, false,
-				new BasicDBObject("$inc", new BasicDBObject("next", 1L)), true, true);
+				new BasicDBObject("$inc", new BasicDBObject("next", 1L)), true,
+				true);
 		object.putLong("_id", (Long) simId.get("next"));
 		object.putString("name", name);
 		object.putString("classname", classname);
@@ -112,16 +114,33 @@ public class Simulation implements PersistentSimulation {
 	@Override
 	public PersistentSimulation getParentSimulation() {
 		long parent = object.getLong("parent");
-		if (parent > 0L)
-			return new Simulation(parent, db);
-		else
+		if (parent > 0L) {
+			Simulation parentSimulation = MongoStorage.Cache
+					.getSimulation(parent);
+			if (parentSimulation == null) {
+				parentSimulation = new Simulation(parent, db);
+				MongoStorage.Cache.addSimulation(parentSimulation);
+			}
+			return parentSimulation;
+		} else
 			return null;
 	}
 
 	@Override
 	public void setParentSimulation(PersistentSimulation parent) {
-		object.putLong("parent", parent.getID());
-		((Simulation) parent).addChild(this);
+		// remove child from previous parent
+		PersistentSimulation previousParent = getParentSimulation();
+		if (previousParent != null) {
+			((Simulation) previousParent).removeChild(this);
+		}
+		long parentId;
+		if (parent == null) {
+			parentId = 0;
+		} else {
+			parentId = parent.getID();
+			((Simulation) parent).addChild(this);
+		}
+		object.putLong("parent", parentId);
 		sims.save(object);
 	}
 
@@ -154,7 +173,8 @@ public class Simulation implements PersistentSimulation {
 		Set<PersistentAgent> agents = new HashSet<PersistentAgent>();
 		DBCollection agentsCollection = db.getCollection(Agent.agentCollection);
 		// query agents collection for this sim id
-		for (DBObject agent : agentsCollection.find(new BasicDBObject("simID", getID()))) {
+		for (DBObject agent : agentsCollection.find(new BasicDBObject("simID",
+				getID()))) {
 			agents.add(new Agent(agent, db));
 		}
 		return agents;
@@ -200,11 +220,17 @@ public class Simulation implements PersistentSimulation {
 		sims.save(object);
 	}
 
+	public void removeChild(PersistentSimulation sim) {
+		BasicDBList children = (BasicDBList) object.get("children");
+		children.remove(sim.getID());
+		sims.save(object);
+	}
+
 	@Override
 	public List<Long> getChildren() {
 		BasicDBList list = (BasicDBList) object.get("children");
 		List<Long> children = new ArrayList<Long>(list.size());
-		for(Object child : list) {
+		for (Object child : list) {
 			children.add(Long.parseLong(child.toString()));
 		}
 		return children;

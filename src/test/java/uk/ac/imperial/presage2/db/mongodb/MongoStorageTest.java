@@ -67,7 +67,7 @@ public class MongoStorageTest extends GenericStorageServiceTest {
 
 		// wait for expected cache expiry
 		try {
-			Thread.sleep(MongoStorage.SIM_CACHE_TTL + 5);
+			Thread.sleep(MongoStorage.Cache.SIM_CACHE_TTL + 5);
 		} catch (InterruptedException e) {
 		}
 

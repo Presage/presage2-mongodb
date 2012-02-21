@@ -48,13 +48,46 @@ public class MongoStorage implements StorageService, DatabaseService {
 	String password = "";
 	Simulation currentSimulation;
 
-	Map<Long, Simulation> simCache = Collections
-			.synchronizedMap(new HashMap<Long, Simulation>());
-	Map<Long, Long> simCacheAge = Collections
-			.synchronizedMap(new HashMap<Long, Long>());
-	final static long SIM_CACHE_TTL = 5000;
-	Map<UUID, Agent> agentCache = Collections
-			.synchronizedMap(new HashMap<UUID, Agent>());
+	static class Cache {
+		static Map<Long, Simulation> simCache = Collections
+				.synchronizedMap(new HashMap<Long, Simulation>());
+		static Map<Long, Long> simCacheAge = Collections
+				.synchronizedMap(new HashMap<Long, Long>());
+		final static long SIM_CACHE_TTL = 5000;
+		static Map<UUID, Agent> agentCache = Collections
+				.synchronizedMap(new HashMap<UUID, Agent>());
+
+		static void addSimulation(Simulation s) {
+			simCache.put(s.getID(), s);
+			simCacheAge.put(s.getID(), System.currentTimeMillis());
+		}
+
+		static Simulation getSimulation(long id) {
+			if (simCache.containsKey(id)
+					&& simCacheAge.get(id).longValue() + SIM_CACHE_TTL > System
+							.currentTimeMillis()) {
+				return simCache.get(id);
+			} else {
+				return null;
+			}
+		}
+
+		static void addAgent(Agent a) {
+			agentCache.put(a.getID(), a);
+		}
+
+		static Agent getAgent(UUID id) {
+			if (agentCache.containsKey(id)) {
+				return agentCache.get(id);
+			} else {
+				return null;
+			}
+		}
+
+		static void clearAgents() {
+			agentCache.clear();
+		}
+	}
 
 	@Inject
 	MongoStorage(@Named("mongo.host") String host) {
@@ -104,11 +137,7 @@ public class MongoStorage implements StorageService, DatabaseService {
 			String classname, String state, int finishTime) {
 		this.currentSimulation = new Simulation(name, classname, state,
 				finishTime, db);
-		this.simCache.put(this.currentSimulation.getID(),
-				this.currentSimulation);
-		this.simCacheAge.put(this.currentSimulation.getID(),
-				System.currentTimeMillis());
-		this.agentCache.clear();
+		Cache.addSimulation(currentSimulation);
 		return this.currentSimulation;
 	}
 
@@ -119,15 +148,13 @@ public class MongoStorage implements StorageService, DatabaseService {
 
 	@Override
 	public PersistentSimulation getSimulationById(long id) {
-		if (this.simCache.containsKey(id)
-				&& this.simCacheAge.get(id).longValue() + SIM_CACHE_TTL > System
-				.currentTimeMillis()) {
-			return this.simCache.get(id);
+		Simulation s = Cache.getSimulation(id);
+		if (s != null) {
+			return s;
 		}
 		try {
-			Simulation s = new Simulation(id, db);
-			this.simCache.put(s.getID(), s);
-			this.simCacheAge.put(s.getID(), System.currentTimeMillis());
+			s = new Simulation(id, db);
+			Cache.addSimulation(s);
 			return s;
 		} catch (NullPointerException e) {
 			return null;
@@ -147,26 +174,27 @@ public class MongoStorage implements StorageService, DatabaseService {
 
 	@Override
 	public void setSimulation(PersistentSimulation sim) {
-		this.agentCache.clear();
+		Cache.clearAgents();
 		this.currentSimulation = (Simulation) sim;
 	}
 
 	@Override
 	public PersistentAgent createAgent(UUID id, String name) {
 		Agent a = new Agent(id, name, this.currentSimulation, db);
-		this.agentCache.put(id, a);
+		Cache.addAgent(a);
 		this.currentSimulation.addAgent(a);
 		return a;
 	}
 
 	@Override
 	public PersistentAgent getAgent(UUID id) {
-		if (agentCache.containsKey(id)) {
-			return agentCache.get(id);
+		Agent a = Cache.getAgent(id);
+		if (a != null) {
+			return a;
 		}
 		try {
-			Agent a = new Agent(id, this.currentSimulation, db);
-			agentCache.put(id, a);
+			a = new Agent(id, this.currentSimulation, db);
+			Cache.addAgent(a);
 			return a;
 		} catch (NullPointerException e) {
 			return null;
