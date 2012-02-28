@@ -32,12 +32,14 @@ public class MongoModule extends DatabaseModule {
 	final String host;
 	final String username;
 	final String password;
+	final String db;
 
 	public MongoModule() {
 		super();
 		this.host = "127.0.0.1";
 		this.username = "";
 		this.password = "";
+		this.db = "presage";
 	}
 
 	public MongoModule(Properties props) {
@@ -45,12 +47,15 @@ public class MongoModule extends DatabaseModule {
 		host = props.getProperty("mongo.host", "127.0.0.1");
 		username = props.getProperty("mongo.user", "");
 		password = props.getProperty("mongo.pass", "");
+		db = props.getProperty("mongo.db", "presage");
 	}
 
 	@Override
 	protected void configure() {
 		bind(String.class).annotatedWith(Names.named("mongo.host")).toInstance(
 				host);
+		bind(String.class).annotatedWith(Names.named("mongo.db"))
+				.toInstance(db);
 		if (username != "") {
 			bind(String.class).annotatedWith(Names.named("mongo.user"))
 					.toInstance(username);

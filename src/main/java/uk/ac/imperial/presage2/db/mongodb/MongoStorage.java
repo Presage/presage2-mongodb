@@ -43,7 +43,7 @@ public class MongoStorage implements StorageService, DatabaseService {
 	Mongo mongo;
 	DB db;
 	final String host;
-	String dbName = "presage";
+	final String dbName;
 	String username = "";
 	String password = "";
 	Simulation currentSimulation;
@@ -89,13 +89,13 @@ public class MongoStorage implements StorageService, DatabaseService {
 		}
 	}
 
-	@Inject
-	MongoStorage(@Named("mongo.host") String host) {
-		super();
-		this.host = host;
+	MongoStorage(String host) {
+		this(host, "presage");
 	}
 
-	MongoStorage(String host, String dbName) {
+	@Inject
+	MongoStorage(@Named("mongo.host") String host,
+			@Named("mongo.db") String dbName) {
 		super();
 		this.host = host;
 		this.dbName = dbName;
