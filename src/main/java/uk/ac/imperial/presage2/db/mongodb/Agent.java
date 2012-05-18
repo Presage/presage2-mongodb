@@ -122,26 +122,31 @@ public class Agent implements PersistentAgent {
 	@Override
 	public TransientAgentState getState(int time) {
 		AgentState t;
-		if (stateCache.containsKey(time)) {
-			t = stateCache.get(time).get();
-			if (t != null)
-				return t;
-			// tidy map
-			for (Entry<Integer, WeakReference<AgentState>> entry : stateCache
-					.entrySet()) {
-				if (entry.getValue().get() == null)
-					stateCache.remove(entry.getKey());
+		synchronized (stateCache) {
+			if (stateCache.containsKey(time)) {
+				t = stateCache.get(time).get();
+				if (t != null)
+					return t;
+				// tidy map
+				for (Entry<Integer, WeakReference<AgentState>> entry : stateCache
+						.entrySet()) {
+					if (entry.getValue().get() == null) {
+						stateCache.remove(entry.getKey());
+					}
+				}
+
 			}
+			t = new AgentState(this, time, db);
+			stateCache.put(time, new WeakReference<AgentState>(t));
 		}
-		t = new AgentState(this, time, db);
-		stateCache.put(time, new WeakReference<AgentState>(t));
 		return t;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String, String> getProperties() {
-		return Collections.unmodifiableMap(((DBObject) object.get("properties")).toMap());
+		return Collections
+				.unmodifiableMap(((DBObject) object.get("properties")).toMap());
 	}
 
 }
