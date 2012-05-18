@@ -22,7 +22,6 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 
 import uk.ac.imperial.presage2.core.db.persistent.PersistentAgent;
@@ -128,10 +127,9 @@ public class Agent implements PersistentAgent {
 				if (t != null)
 					return t;
 				// tidy map
-				for (Entry<Integer, WeakReference<AgentState>> entry : stateCache
-						.entrySet()) {
-					if (entry.getValue().get() == null) {
-						stateCache.remove(entry.getKey());
+				for (Integer key : stateCache.keySet()) {
+					if (stateCache.get(key) == null) {
+						stateCache.remove(key);
 					}
 				}
 
