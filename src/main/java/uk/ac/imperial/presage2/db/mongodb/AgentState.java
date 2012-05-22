@@ -19,7 +19,9 @@
 package uk.ac.imperial.presage2.db.mongodb;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -94,11 +96,15 @@ public class AgentState implements TransientAgentState {
 		states.save(object);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String, String> getProperties() {
-		return Collections
-				.unmodifiableMap(((DBObject) object.get("properties")).toMap());
+		Set<String> keys = ((DBObject) object.get("properties")).keySet();
+		Map<String, String> properties = new HashMap<String, String>(
+				keys.size());
+		for (String key : keys) {
+			properties.put(key, getProperty(key));
+		}
+		return Collections.unmodifiableMap(properties);
 	}
 
 }

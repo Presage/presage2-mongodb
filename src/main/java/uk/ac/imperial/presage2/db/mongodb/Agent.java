@@ -22,6 +22,7 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import uk.ac.imperial.presage2.core.db.persistent.PersistentAgent;
@@ -140,11 +141,15 @@ public class Agent implements PersistentAgent {
 		return t;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String, String> getProperties() {
-		return Collections
-				.unmodifiableMap(((DBObject) object.get("properties")).toMap());
+		Set<String> keys = ((DBObject) object.get("properties")).keySet();
+		Map<String, String> properties = new HashMap<String, String>(
+				keys.size());
+		for (String key : keys) {
+			properties.put(key, getProperty(key));
+		}
+		return Collections.unmodifiableMap(properties);
 	}
 
 }
