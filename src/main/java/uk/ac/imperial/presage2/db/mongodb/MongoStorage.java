@@ -32,13 +32,15 @@ import uk.ac.imperial.presage2.core.db.persistent.PersistentSimulation;
 import uk.ac.imperial.presage2.core.db.persistent.TransientAgentState;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCursor;
 import com.mongodb.Mongo;
 
-public class MongoStorage implements StorageService, DatabaseService {
+public class MongoStorage implements StorageService, DatabaseService,
+		Provider<DB> {
 
 	Mongo mongo;
 	DB db;
@@ -204,6 +206,17 @@ public class MongoStorage implements StorageService, DatabaseService {
 	@Override
 	public TransientAgentState getAgentState(UUID aid, int time) {
 		return getAgent(aid).getState(time);
+	}
+
+	@Override
+	public DB get() {
+		if (!isStarted())
+			try {
+				start();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		return this.db;
 	}
 
 }

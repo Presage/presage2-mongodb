@@ -22,6 +22,7 @@ import java.util.Properties;
 
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
+import com.mongodb.DB;
 
 import uk.ac.imperial.presage2.core.db.DatabaseModule;
 import uk.ac.imperial.presage2.core.db.DatabaseService;
@@ -66,6 +67,7 @@ public class MongoModule extends DatabaseModule {
 		bind(MongoStorage.class).in(Singleton.class);
 		bind(DatabaseService.class).to(MongoStorage.class);
 		bind(StorageService.class).to(MongoStorage.class);
+		bind(DB.class).toProvider(MongoStorage.class);
 	}
 
 }
